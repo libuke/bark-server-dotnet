@@ -2,7 +2,7 @@
 {
     public enum ApnsResponseReason
     {
-        Unknown = - 1,
+        Unknown = -1,
 
         // 200
         Success,

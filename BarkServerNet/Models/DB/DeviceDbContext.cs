@@ -1,5 +1,5 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace BarkServerNet
 {
@@ -10,6 +10,11 @@ namespace BarkServerNet
         {
         }
 
-        public DbSet<Device> Devices { get; set; }
+        DbSet<Device>? _devices;
+        public DbSet<Device> Devices
+        {
+            get => _devices ?? throw new InvalidOperationException("Uninitialized " + nameof(Devices));
+            set => _devices = value;
+        }
     }
 }

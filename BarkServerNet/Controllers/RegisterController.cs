@@ -47,6 +47,7 @@ namespace BarkServerNet.Controllers
             }
             catch (Exception ex)
             {
+                response.Message = ex.Message;
                 _logger.LogError(ex, nameof(RegisterController));
             }
 

@@ -2,8 +2,8 @@ using System;
 using System.IO;
 using System.Text;
 using System.Net.Http;
-using System.Threading;
 using System.Text.Json;
+using System.Threading;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Net.Http.Headers;
@@ -20,11 +20,11 @@ namespace DotAPNS
         internal const string DevelopmentEndpoint = "https://api.development.push.apple.com";
         internal const string ProductionEndpoint = "https://api.push.apple.com";
 
-        readonly ECDsa _key;
-        readonly string _keyId;
-        readonly string _teamId;
+        readonly ECDsa? _key;
+        readonly string? _keyId;
+        readonly string? _teamId;
 
-        string _jwt;
+        string? _jwt;
         DateTime _lastJwtGenerationTime;
         readonly object _jwtRefreshLock = new();
 
@@ -86,15 +86,14 @@ namespace DotAPNS
             if (_useCert)
             {
                 if (_isVoipCert && push.Type != ApplePushType.Voip)
+                {
                     throw new InvalidOperationException("Provided certificate can only be used to send 'voip' type pushes.");
+                }
             }
 
             var payload = push.GeneratePayload();
 
-            string url = (_useSandbox ? DevelopmentEndpoint : ProductionEndpoint)
-                + (_useBackupPort ? ":2197" : ":443")
-                + "/3/device/"
-                + (push.Token ?? push.VoipToken);
+            string url = $"{(_useSandbox ? DevelopmentEndpoint : ProductionEndpoint)}{(_useBackupPort ? ":2197" : ":443")}/3/device/{push.Token ?? push.VoipToken}";
             var req = new HttpRequestMessage(HttpMethod.Post, url)
             {
                 Version = new Version(2, 0)
@@ -110,9 +109,13 @@ namespace DotAPNS
             {
                 var exp = push.Expiration.Value;
                 if (exp == DateTimeOffset.MinValue)
+                {
                     req.Headers.Add("apns-expiration", "0");
+                }
                 else
+                {
                     req.Headers.Add("apns-expiration", exp.ToUnixTimeSeconds().ToString());
+                }
             }
             if (!string.IsNullOrEmpty(push.CollapseId))
             {
@@ -142,14 +145,16 @@ namespace DotAPNS
 
             // Push has been successfully sent. This is the only code indicating a success as per documentation.
             if (statusCode == 200)
+            {
                 return ApnsResponse.Successful();
+            }
 
             // something went wrong
             // check for payload 
             // {"reason":"DeviceTokenNotForTopic"}
             // {"reason":"Unregistered","timestamp":1454948015990}
 
-            ApnsErrorResponsePayload errorPayload;
+            ApnsErrorResponsePayload? errorPayload;
             try
             {
                 errorPayload = JsonSerializer.Deserialize<ApnsErrorResponsePayload>(respContent);
@@ -160,7 +165,7 @@ namespace DotAPNS
                     $"Status: {statusCode}, reason: {respContent ?? "not specified"}.");
             }
 
-            return ApnsResponse.Error(errorPayload.Reason, errorPayload.ReasonRaw);
+            return ApnsResponse.Error(errorPayload!.Reason, errorPayload!.ReasonRaw);
         }
 
         public static ApnsClient CreateUsingJwt(HttpClient http, ApnsJwtOptions options)
@@ -203,7 +208,10 @@ namespace DotAPNS
 
         public static ApnsClient CreateUsingCert(X509Certificate2 cert)
         {
-            if (cert == null) throw new ArgumentNullException(nameof(cert));
+            if (cert == null)
+            {
+                throw new ArgumentNullException(nameof(cert));
+            }
 
             var handler = new HttpClientHandler
             {
@@ -217,14 +225,20 @@ namespace DotAPNS
 
         public static ApnsClient CreateUsingCustomHttpClient(HttpClient httpClient, X509Certificate2 cert)
         {
-            if (httpClient == null) throw new ArgumentNullException(nameof(httpClient));
-            if (cert == null) throw new ArgumentNullException(nameof(cert));
+            if (httpClient == null)
+            {
+                throw new ArgumentNullException(nameof(httpClient));
+            }
+            if (cert == null)
+            {
+                throw new ArgumentNullException(nameof(cert));
+            }
 
             var apns = new ApnsClient(httpClient, cert);
             return apns;
         }
 
-        public static ApnsClient CreateUsingCert(string pathToCert, string certPassword = null)
+        public static ApnsClient CreateUsingCert(string pathToCert, string? certPassword = null)
         {
             if (string.IsNullOrWhiteSpace(pathToCert))
             {
@@ -268,7 +282,7 @@ namespace DotAPNS
             {
                 if (_lastJwtGenerationTime > DateTime.UtcNow - TimeSpan.FromMinutes(20)) // refresh no more than once every 20 minutes
                 {
-                    return _jwt;
+                    return _jwt ?? "";
                 }
                 var now = DateTimeOffset.UtcNow;
 
@@ -281,7 +295,7 @@ namespace DotAPNS
 
                 byte[] signature;
 
-                signature = _key.SignData(Encoding.UTF8.GetBytes(unsignedJwtData), HashAlgorithmName.SHA256);
+                signature = _key!.SignData(Encoding.UTF8.GetBytes(unsignedJwtData), HashAlgorithmName.SHA256);
 
                 _jwt = $"{unsignedJwtData}.{Convert.ToBase64String(signature)}";
                 _lastJwtGenerationTime = now.UtcDateTime;

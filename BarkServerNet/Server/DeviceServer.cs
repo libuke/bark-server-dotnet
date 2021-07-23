@@ -19,22 +19,22 @@ namespace BarkServerNet
             return await _context.SaveChangesAsync();
         }
 
-        public Device GetDevice(string deviceKey)
+        public Device? GetDevice(string deviceKey)
         {
-            return _context.Devices.FirstOrDefault(x => x.DeviceKey == deviceKey);
+            return _context.Devices!.FirstOrDefault(x => x.DeviceKey == deviceKey);
         }
 
         public async Task<int> UpdateDevice(Device device)
         {
-            _context.Devices.Update(device);
+            _context.Devices!.Update(device);
             return await _context.SaveChangesAsync();
         }
 
-        public async Task<string> RegisterDevice(string deviceToken)
+        public async Task<string?> RegisterDevice(string deviceToken)
         {
             int count;
             string deviceKey = Guid.NewGuid().ToString("N");
-            var device = _context.Devices.FirstOrDefault(x => x.DeviceToken == deviceToken);
+            var device = _context.Devices!.FirstOrDefault(x => x.DeviceToken == deviceToken);
             if (device != null)
             {
                 device.DeviceKey = deviceKey;

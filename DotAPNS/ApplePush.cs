@@ -7,9 +7,12 @@ namespace DotAPNS
 {
     public class ApplePush
     {
-        public string Token { get; private set; }
-        public string VoipToken { get; private set; }
+        public string? Token { get; private set; }
+
+        public string? VoipToken { get; private set; }
+
         public int Priority => CustomPriority ?? (Type == ApplePushType.Background ? 5 : 10); // 5 for background, 10 for everything else
+
         public ApplePushType Type { get; }
 
         /// <summary>
@@ -17,18 +20,18 @@ namespace DotAPNS
         /// </summary>
         public int? CustomPriority { get; private set; }
 
-        public ApplePushAlert Alert { get; private set; }
+        public ApplePushAlert? Alert { get; private set; }
 
-        public ApplePushLocalizedAlert LocalizedAlert { get; private set; }
+        public ApplePushLocalizedAlert? LocalizedAlert { get; private set; }
 
         public int? Badge { get; private set; }
 
-        public string Sound { get; private set; }
+        public string? Sound { get; private set; }
 
         /// <summary>
         /// See <a href="https://developer.apple.com/documentation/usernotifications/unnotificationcontent/1649866-categoryidentifier">official documentation</a> for reference.
         /// </summary>
-        public string Category { get; private set; }
+        public string? Category { get; private set; }
 
         public bool IsContentAvailable { get; private set; }
 
@@ -46,17 +49,17 @@ namespace DotAPNS
         /// When sending the same notification more than once, use the same value in this header to coalesce the requests.
         /// <b>The value of this key must not exceed 64 bytes.</b>
         /// </summary>
-        public string CollapseId { get; private set; }
+        public string? CollapseId { get; private set; }
 
         /// <summary>
         /// User-defined properties that will be attached to the root payload dictionary.
         /// </summary>
-        public Dictionary<string, object> CustomProperties { get; set; }
+        public Dictionary<string, object>? CustomProperties { get; set; }
 
         /// <summary>
         /// User-defined properties that will be attached to the <i>aps</i> payload dictionary.
         /// </summary>
-        public IDictionary<string, object> CustomApsProperties { get; set; }
+        public IDictionary<string, object>? CustomApsProperties { get; set; }
 
         /// <summary>
         /// Indicates whether alert must be sent as a string. 
@@ -97,8 +100,11 @@ namespace DotAPNS
         public ApplePush AddAlert(string title, string subtitle, string body)
         {
             Alert = new ApplePushAlert(title, subtitle, body);
+
             if (title == null)
+            {
                 _sendAlertAsText = true;
+            }
             return this;
         }
 
@@ -108,11 +114,14 @@ namespace DotAPNS
         /// <param name="title">Alert title. Can be null.</param>
         /// <param name="body">Alert body. <b>Cannot be null.</b></param>
         /// <returns></returns>
-        public ApplePush AddAlert(string title, string body)
+        public ApplePush AddAlert(string? title, string body)
         {
             Alert = new ApplePushAlert(title, body);
+
             if (title == null)
+            {
                 _sendAlertAsText = true;
+            }
             return this;
         }
 
@@ -135,7 +144,7 @@ namespace DotAPNS
         /// <param name="tittleLocArgs">Variable string values to appear in place of the format specifiers in title-loc-key. Can be null.</param>
         /// <param name="actionLocKey">The string is used as a key to get a localized string in the current localization to use for the right button’s title instead of “View". Can be null.</param>
         /// <returns></returns>
-        public ApplePush AddLocalizedAlert(string titleLocKey, string[] tittleLocArgs, string locKey, string[] locArgs, string actionLocKey)
+        public ApplePush AddLocalizedAlert(string? titleLocKey, string[]? tittleLocArgs, string locKey, string[] locArgs, string? actionLocKey)
         {
             LocalizedAlert = new ApplePushLocalizedAlert(titleLocKey, tittleLocArgs, locKey, locArgs, actionLocKey);
             return this;
@@ -319,11 +328,17 @@ namespace DotAPNS
             {
                 object alert;
                 if (_sendAlertAsText)
+                {
                     alert = Alert.Body;
+                }
                 else if (Alert.Subtitle == null)
+                {
                     alert = new { title = Alert.Title, body = Alert.Body };
+                }
                 else
+                {
                     alert = new { title = Alert.Title, subtitle = Alert.Subtitle, body = Alert.Body };
+                }
                 payload.aps.alert = alert;
             }
             else if (LocalizedAlert != null)
@@ -370,13 +385,13 @@ namespace DotAPNS
 
     public class ApplePushAlert
     {
-        public string Title { get; }
+        public string? Title { get; }
 
-        public string Subtitle { get; }
+        public string? Subtitle { get; }
 
         public string Body { get; }
 
-        public ApplePushAlert(string title, string body)
+        public ApplePushAlert(string? title, string body)
         {
             Title = title;
             Body = body ?? throw new ArgumentNullException(nameof(body));
@@ -393,10 +408,10 @@ namespace DotAPNS
     public class ApplePushLocalizedAlert
     {
         [JsonPropertyName("title-loc-key")]
-        public string TitleLocKey { get; }
+        public string? TitleLocKey { get; }
 
         [JsonPropertyName("title-loc-args")]
-        public string[] TitleLocArgs { get; }
+        public string[]? TitleLocArgs { get; }
 
         [JsonPropertyName("loc-key")]
         public string LocKey { get; }
@@ -405,7 +420,7 @@ namespace DotAPNS
         public string[] LocArgs { get; }
 
         [JsonPropertyName("action-loc-key")]
-        public string ActionLocKey { get; }
+        public string? ActionLocKey { get; }
 
         public ApplePushLocalizedAlert(string locKey, string[] locArgs)
         {
@@ -413,7 +428,7 @@ namespace DotAPNS
             LocArgs = locArgs ?? throw new ArgumentNullException(nameof(locArgs));
         }
 
-        public ApplePushLocalizedAlert(string titleLocKey, string[] titleLocArgs, string locKey, string[] locArgs, string actionLocKey)
+        public ApplePushLocalizedAlert(string? titleLocKey, string[]? titleLocArgs, string locKey, string[] locArgs, string? actionLocKey)
         {
             TitleLocKey = titleLocKey;
             TitleLocArgs = titleLocArgs;

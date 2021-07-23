@@ -2,6 +2,7 @@
 
 namespace BarkServerNet
 {
+    #nullable disable
     public class Device
     {
         [Key]

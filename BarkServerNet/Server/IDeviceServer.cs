@@ -6,10 +6,10 @@ namespace BarkServerNet
     {
         Task<int> AddDevice(Device device);
 
-        Device GetDevice(string deviceToken);
+        Device? GetDevice(string deviceToken);
 
         Task<int> UpdateDevice(Device device);
 
-        Task<string> RegisterDevice(string deviceToken);
+        Task<string?> RegisterDevice(string deviceToken);
     }
 }
