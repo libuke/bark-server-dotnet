@@ -40,7 +40,7 @@ namespace BarkServerNet.Controllers
         }
 
         [HttpGet("/{deviceKey}")]
-        public async Task<CommonResponse> GetQuery(string deviceKey, [FromQuery] string? title, [FromQuery] string? body, [FromQuery] string sound, [FromQuery] MessageExtra? extra)
+        public async Task<CommonResponse> GetQuery(string deviceKey, [FromQuery] string? title, [FromQuery] string? body, [FromQuery] string? sound, [FromQuery] MessageExtra? extra)
         {
             var head = new MessageHead
             {
