@@ -28,8 +28,8 @@ namespace BarkServerNet
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "BarkServerNet", Version = "v1" });
             });
-            services.AddApns<ApnsJwtOptions>(o => o.UseApnsJwt(Configuration.GetApnsJwtOptions("apnjwt")));
-            services.AddDbContext<DeviceDbContext>(o => o.UseSqlite(Configuration.GetConnectionString("sqlite")));
+            services.AddApns<ApnsJwtOptions>(o => o.UseApnsJwt(Configuration.GetApnsJwtOptions("Apnjwt")));
+            services.AddDbContext<DeviceDbContext>(o => o.UseSqlite(Configuration.GetConnectionString("Sqlite")));
             services.AddScoped<IDeviceServer, DeviceServer>();
         }
 
