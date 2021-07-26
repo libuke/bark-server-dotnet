@@ -21,29 +21,44 @@ namespace BarkServerNet.Controllers
 
 
         [HttpGet]
-        public async Task<CommonResponse> Get(string deviceToken)
+        public async Task<CommonResponse> Get(string deviceToken, string? key)
         {
             CommonResponse response = new()
             {
                 Code = StatusCodes.Status200OK,
                 Timestamp = DateTimeOffset.Now.ToUnixTimeSeconds()
             };
-
-            if (string.IsNullOrWhiteSpace(deviceToken))
-            {
-                response.Message = $"{nameof(deviceToken)} is empty";
-            }
-
             try
             {
-                var deviceKey = await _server.RegisterDevice(deviceToken);
-
-                response.Message = "success";
-                response.Device = new()
+                if (string.IsNullOrWhiteSpace(key))
                 {
-                    Key = deviceKey,
-                    DeviceToken = deviceToken
-                };
+                    var deviceKey = await _server.RegisterDevice(deviceToken);
+
+                    response.Message = deviceKey == null ? "fail" : "success";
+                    response.Device = new()
+                    {
+                        Key = deviceKey,
+                        DeviceToken = deviceToken
+                    };
+                }
+                else
+                {
+                    var device = _server.GetDevice(key);
+
+                    if (device == null || device.DeviceToken != deviceToken)
+                    {
+                        response.Message = $"{key} not error";
+                    }
+                    else
+                    {
+                        response.Message = "success";
+                        response.Device = new()
+                        {
+                            Key = key,
+                            DeviceToken = device.DeviceToken
+                        };
+                    }
+                }
             }
             catch (Exception ex)
             {
