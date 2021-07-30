@@ -10,62 +10,37 @@ namespace BarkServerNet.Controllers
     [ApiController]
     public class RegisterController : ControllerBase
     {
-        readonly ILogger<PushController> _logger;
-        readonly IDeviceServer _server;
-
-        public RegisterController(ILogger<PushController> logger, IDeviceServer server)
-        {
-            _logger = logger;
-            _server = server;
-        }
-
-
         [HttpGet]
-        public async Task<CommonResponse> Get(string deviceToken, string? key)
+        public async Task<CommonResponse> Get([FromServices] ILogger<RegisterController> logger, [FromServices] IDeviceServer server, string deviceToken, string? key)
         {
+            Device? device = default;
             CommonResponse response = new()
             {
                 Code = StatusCodes.Status200OK,
                 Timestamp = DateTimeOffset.Now.ToUnixTimeSeconds()
             };
+
             try
             {
-                if (string.IsNullOrWhiteSpace(key))
-                {
-                    var deviceKey = await _server.RegisterDevice(deviceToken);
-
-                    response.Message = deviceKey == null ? "fail" : "success";
-                    response.Device = new()
-                    {
-                        Key = deviceKey,
-                        DeviceToken = deviceToken
-                    };
-                }
-                else
-                {
-                    var device = _server.GetDevice(key);
-
-                    if (device == null || device.DeviceToken != deviceToken)
-                    {
-                        response.Message = $"{key} not error";
-                    }
-                    else
-                    {
-                        response.Message = "success";
-                        response.Device = new()
-                        {
-                            Key = key,
-                            DeviceToken = device.DeviceToken
-                        };
-                    }
-                }
+                device = string.IsNullOrWhiteSpace(key) ? await server.RegisterDevice(deviceToken) : server.GetDevice(key);
             }
             catch (Exception ex)
             {
                 response.Message = ex.Message;
-                _logger.LogError(ex, nameof(RegisterController));
+                logger.LogError(ex, "Registe fail");
             }
-
+            finally
+            {
+                if (device != null && device.DeviceToken == deviceToken)
+                {
+                    response.DeviceInfo = new() { DeviceKey = device.DeviceKey, DeviceToken = device.DeviceToken };
+                    response.Message = "success";
+                }
+                else
+                {
+                    response.Message = "fail";
+                }
+            }
             return response;
         }
     }

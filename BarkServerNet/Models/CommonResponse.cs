@@ -15,6 +15,15 @@ namespace BarkServerNet
 
         [JsonPropertyName("data")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-        public DeviceInfo? Device { get; set; }
+        public DeviceInfo? DeviceInfo { get; set; }
+    }
+
+    public class DeviceInfo
+    {
+        [JsonPropertyName("key")]
+        public string? DeviceKey { get; set; }
+
+        [JsonPropertyName("device_device_token")]
+        public string? DeviceToken { get; set; }
     }
 }

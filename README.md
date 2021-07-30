@@ -9,7 +9,7 @@
   - Windods x86 x64 arm64
   - Mac
 ## 启动
-- git https://github.com/libuke/bark-server-dotnet.git  
+- git clone https://github.com/libuke/bark-server-dotnet.git  
 - cd bark-server-dotnet/BarkServerNet  
 - dotnet run  
 更多命令请参考 [.NET CLI](https://docs.microsoft.com/zh-cn/dotnet/core/tools/)

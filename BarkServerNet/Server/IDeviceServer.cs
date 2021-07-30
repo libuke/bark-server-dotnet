@@ -8,8 +8,6 @@ namespace BarkServerNet
 
         Device? GetDevice(string deviceKey);
 
-        Task<int> UpdateDevice(Device device);
-
-        Task<string?> RegisterDevice(string deviceToken);
+        Task<Device?> RegisterDevice(string deviceToken);
     }
 }

@@ -1,6 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System;
-
+﻿using System;
+using Microsoft.EntityFrameworkCore;
 namespace BarkServerNet
 {
     public class DeviceDbContext : DbContext

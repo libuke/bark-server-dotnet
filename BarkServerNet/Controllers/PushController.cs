@@ -1,8 +1,5 @@
 ﻿using System;
-using DotAPNS;
-using System.Reflection;
 using DotAPNS.Extensions;
-using System.ComponentModel;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
@@ -14,53 +11,36 @@ namespace BarkServerNet.Controllers
     [Route("[controller]")]
     public class PushController : ControllerBase
     {
-        readonly IDeviceServer _server;
-        readonly IApnsService _apnsService;
-        readonly ILogger<PushController> _logger;
-
-        #region Route
-        public PushController(ILogger<PushController> logger, IDeviceServer server, IApnsService apnsService)
-        {
-            _logger = logger;
-            _server = server;
-            _apnsService = apnsService;
-        }
-
         [HttpGet("/{deviceKey}/{title}/{body?}")]
-        public async Task<CommonResponse> GetRoute(string deviceKey, string? title, string? body, [FromQuery] string? sound, [FromQuery] MessageExtra? extra)
+        public async Task<CommonResponse> Get([FromServices] ILogger<PushController> logger, [FromServices] IDeviceServer server, [FromServices] IApnsService apnsService,
+            string deviceKey, string title, string? body, [FromQuery] Message message)
         {
-            var head = new MessageHead
-            {
-                DeviceKey = deviceKey,
-                Title = title,
-                Body = body,
-                Sound = sound
-            };
-            return await Push(head, extra);
+            message.DeviceKey = deviceKey;
+            message.Title = title;
+            message.Body = body;
+
+            return await Push(logger, server, apnsService, message);
         }
 
         [HttpGet("/{deviceKey}")]
-        public async Task<CommonResponse> GetQuery(string deviceKey, [FromQuery] string? title, [FromQuery] string? body, [FromQuery] string? sound, [FromQuery] MessageExtra? extra)
+        public async Task<CommonResponse> Get([FromServices] ILogger<PushController> logger, [FromServices] IDeviceServer server, [FromServices] IApnsService apnsService,
+            string deviceKey, [FromQuery] Message message)
         {
-            var head = new MessageHead
-            {
-                DeviceKey = deviceKey,
-                Title = title,
-                Body = body,
-                Sound = sound
-            };
-            return await Push(head, extra);
+            message.DeviceKey = deviceKey;
+
+            return await Push(logger, server, apnsService, message);
         }
 
         [HttpPost]
-        public async Task<CommonResponse> Post(Message message)
+        public async Task<CommonResponse> Post([FromServices] ILogger<PushController> logger, [FromServices] IDeviceServer server,
+            [FromServices] IApnsService apnsService, Message message)
         {
-            return await Push(message.Head, message.Extra);
+            return await Push(logger, server, apnsService, message);
         }
-        #endregion
 
-        private async Task<CommonResponse> Push(MessageHead head, MessageExtra? extra)
+        async Task<CommonResponse> Push(ILogger<PushController> logger, IDeviceServer server, IApnsService apnsService, Message message)
         {
+            Device? device = default;
             CommonResponse resp = new()
             {
                 Code = StatusCodes.Status200OK,
@@ -69,40 +49,20 @@ namespace BarkServerNet.Controllers
 
             try
             {
-                var device = _server.GetDevice(head.DeviceKey);
-                if (device != null)
+                device = server.GetDevice(message.DeviceKey);
+            }
+            catch (Exception ex)
+            {
+                resp.Message = ex.Message;
+                logger.LogError(ex, nameof(PushController));
+            }
+            finally
+            {
+                if (device != null && !string.IsNullOrWhiteSpace(device.DeviceToken))
                 {
-                    var apns = _apnsService.CreateUsingJwt();
-                    var push = new ApplePush(ApplePushType.Alert)
-                                .AddMutableContent()
-                                .AddToken(device.DeviceToken);
+                    var apns = apnsService.CreateUsingJwt();
+                    var result = await apns.SendAsync(message.CreatePush(device.DeviceToken));
 
-                    if (head.Title == null)
-                    {
-                        push.AddAlert(head.Body ?? "");
-                    }
-                    else
-                    {
-                        push.AddAlert(head.Title, head.Body ?? "");
-                    }
-                    if (!string.IsNullOrWhiteSpace(head.Sound))
-                    {
-                        push.AddSound(head.Sound);
-                    }
-
-                    if (extra != null)
-                    {
-                        foreach (var property in extra.GetType().GetProperties())
-                        {
-                            if (property.GetValue(extra) is string value)
-                            {
-                                var display = property.GetCustomAttribute<DisplayNameAttribute>() ?? throw new InvalidOperationException($"Not Add DisplayNameAttribute");
-                                push.AddCustomProperty(display.DisplayName, value);
-                            }
-                        }
-                    }
-
-                    var result = await apns.SendAsync(push);
                     resp.Message = result.IsSuccessful ? "success" : result.ReasonString;
                 }
                 else
@@ -110,11 +70,7 @@ namespace BarkServerNet.Controllers
                     resp.Message = "DeviceToken is empty";
                 }
             }
-            catch (Exception ex)
-            {
-                resp.Message = ex.Message;
-                _logger.LogError(ex, nameof(PushController));
-            }
+
             return resp;
         }
     }
