@@ -45,16 +45,9 @@ namespace BarkServerNet
 
             var push = new ApplePush(ApplePushType.Alert)
                 .AddMutableContent()
-                .AddToken(deviceToken);
+                .AddToken(deviceToken)
+                .AddAlert(Title, Body ?? "");
 
-            if (Body == null)
-            {
-                push.AddAlert(Title);
-            }
-            else
-            {
-                push.AddAlert(Title, Body);
-            }
             if (!string.IsNullOrWhiteSpace(Sound))
             {
                 push.AddSound(Sound);
