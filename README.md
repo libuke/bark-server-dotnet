@@ -8,10 +8,12 @@
   - Linux x86 x64 arm64
   - Windods x86 x64 arm64
   - Mac
-## 启动
-- git clone https://github.com/libuke/bark-server-dotnet.git  
-- cd bark-server-dotnet/BarkServerNet  
-- dotnet run  
+## 运行
+ ```sh 
+  git clone https://github.com/libuke/bark-server-dotnet.git &&
+  cd bark-server-dotnet/BarkServerNet &&
+  dotnet run
+```
 更多命令请参考 [.NET CLI](https://docs.microsoft.com/zh-cn/dotnet/core/tools/)
 ## 托管和部署
 - [Linux 与 Nginx](https://docs.microsoft.com/zh-cn/aspnet/core/host-and-deploy/linux-nginx?view=aspnetcore-5.0)

@@ -24,10 +24,6 @@ namespace DotAPNS
         readonly string? _keyId;
         readonly string? _teamId;
 
-        string? _jwt;
-        DateTime _lastJwtGenerationTime;
-        readonly object _jwtRefreshLock = new();
-
         readonly HttpClient _http;
         readonly bool _useCert;
 
@@ -278,29 +274,14 @@ namespace DotAPNS
 
         string GetOrGenerateJwt()
         {
-            lock (_jwtRefreshLock)
-            {
-                if (_lastJwtGenerationTime > DateTime.UtcNow - TimeSpan.FromMinutes(20)) // refresh no more than once every 20 minutes
-                {
-                    return _jwt ?? "";
-                }
-                var now = DateTimeOffset.UtcNow;
+            string header = JsonSerializer.Serialize((new { alg = "ES256", kid = _keyId }));
+            string payload = JsonSerializer.Serialize(new { iss = _teamId, iat = DateTimeOffset.UtcNow.ToUnixTimeSeconds() });
+            string headerBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(header));
+            string payloadBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(payload));
+            string unsignedJwtData = $"{headerBase64}.{payloadBase64}";
+            byte[] signature = _key!.SignData(Encoding.UTF8.GetBytes(unsignedJwtData), HashAlgorithmName.SHA256);
 
-                string header = JsonSerializer.Serialize((new { alg = "ES256", kid = _keyId }));
-                string payload = JsonSerializer.Serialize(new { iss = _teamId, iat = now.ToUnixTimeSeconds() });
-
-                string headerBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(header));
-                string payloadBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(payload));
-                string unsignedJwtData = $"{headerBase64}.{payloadBase64}";
-
-                byte[] signature;
-
-                signature = _key!.SignData(Encoding.UTF8.GetBytes(unsignedJwtData), HashAlgorithmName.SHA256);
-
-                _jwt = $"{unsignedJwtData}.{Convert.ToBase64String(signature)}";
-                _lastJwtGenerationTime = now.UtcDateTime;
-                return _jwt;
-            }
+            return $"{unsignedJwtData}.{Convert.ToBase64String(signature)}";
         }
     }
 }
