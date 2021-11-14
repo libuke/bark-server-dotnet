@@ -1,9 +1,9 @@
-# Bark 推送服务 .NET 5版
+# Bark 推送服务 .NET 6版
 ## 什么是Bark？
 - [Bark](https://github.com/Finb/Bark) IOS APP 允许您将自定义通知推送至您的iPhone
 - [Bark-Server](https://github.com/Finb/bark-server) Go语言版（原版)
 ## 运行环境
-- [.NET 5](https://dotnet.microsoft.com/download)
+- [.NET 6](https://dotnet.microsoft.com/download)
 - 支持的操作系统
   - Linux x86 x64 arm64
   - Windods x86 x64 arm64
