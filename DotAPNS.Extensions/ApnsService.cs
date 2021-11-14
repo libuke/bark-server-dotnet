@@ -1,6 +1,4 @@
-﻿using System.Net.Http;
-using Microsoft.Extensions.Options;
-using System.Collections.Concurrent;
+﻿using Microsoft.Extensions.Options;
 using System.Security.Cryptography.X509Certificates;
 
 namespace DotAPNS.Extensions

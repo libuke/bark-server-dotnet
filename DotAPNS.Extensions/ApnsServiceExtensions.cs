@@ -1,15 +1,16 @@
-﻿using System;
-using System.Net.Http;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DotAPNS.Extensions
 {
     public static class ApnsServiceExtensions
     {
-        public static IServiceCollection AddApns<T>(this IServiceCollection services, Action<ApnsOptionsBuilder<T>> optionsAction) where T : class
+        public static IServiceCollection AddApns<T>(this IServiceCollection services, int httpTimeout, Action<ApnsOptionsBuilder<T>> optionsAction) where T : class
         {
-            services.AddHttpClient("dotAPNS_Jwt");
+            services.AddHttpClient("dotAPNS_Jwt", x => 
+            { 
+                x.Timeout = TimeSpan.FromSeconds(httpTimeout);
+            });
             services.AddHttpClient("dotAPNS_Cert")
                 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
                 {

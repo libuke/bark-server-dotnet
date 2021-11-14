@@ -1,67 +1,40 @@
-﻿using System;
-using DotAPNS;
-using System.Reflection;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 
-namespace BarkServerNet
+namespace BarkServerNet;
+
+public class Message
 {
-    public class Message
+    public string? Title { get; set; }
+
+    public string? Body { get; set; }
+
+    string? _sound;
+    public string? Sound
     {
-        string _device = "";
-        public string DeviceKey
-        {
-            get => _device;
-            set => _device = value ?? throw new InvalidOperationException($"Uninitialized {nameof(DeviceKey)}");
-        }
-
-        string _title = "";
-        public string Title
-        {
-            get => _title;
-            set => _title = value ?? throw new InvalidOperationException($"Uninitialized {nameof(Title)}");
-        }
-
-        public string? Body { get; set; }
-
-        string? _sound;
-        public string? Sound
-        {
-            get => _sound;
-            set { _sound = value + ".caf"; }
-        }
-
-        [DisplayName("group")]
-        public string? Group { get; set; }
-
-        [DisplayName("isArchive")]
-        public string? IsArchive { get; set; }
-
-        [DisplayName("url")]
-        public string? Url { get; set; }
-
-        public ApplePush CreatePush(string deviceToken)
-        {
-            deviceToken = deviceToken ?? throw new ArgumentNullException(nameof(deviceToken));
-
-            var push = new ApplePush(ApplePushType.Alert)
-                .AddMutableContent()
-                .AddToken(deviceToken)
-                .AddAlert(Title, Body ?? "");
-
-            if (!string.IsNullOrWhiteSpace(Sound))
-            {
-                push.AddSound(Sound);
-            }
-
-            foreach (var property in GetType().GetProperties())
-            {
-                if (property.GetCustomAttribute<DisplayNameAttribute>() is DisplayNameAttribute display
-                    && property.GetValue(this) is string value)
-                {
-                    push.AddCustomProperty(display.DisplayName, value);
-                }
-            }
-            return push;
-        }
+        get => $"{_sound}.caf";
+        set { _sound =  value ?? "default" ; }
     }
+
+    public string? Category { get; set; } = "myNotificationCategory";
+
+    public int? Badge { get; set; }
+
+    public int? IsArchive { get; set; }
+
+    public string? Level { get; set; }
+
+    [DisplayName("group")]
+    public string? Group { get; set; }
+
+    [DisplayName("url")]
+    public string? Url { get; set; }
+
+    [DisplayName("icon")]
+    public string? Icon { get; set; }
+
+    [DisplayName("autoCopy")]
+    public string? AutoCopy { get; set; }
+
+    [DisplayName("copy")]
+    public string? Copy { get; set; }
 }

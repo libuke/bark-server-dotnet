@@ -1,20 +1,40 @@
-﻿using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Hosting;
+﻿using BarkServerNet;
+using DotAPNS;
+using DotAPNS.Extensions;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.EntityFrameworkCore;
 
-namespace BarkServerNet
+var builder = WebApplication.CreateBuilder(args);
+// Add services to the container.
+
+builder.Services.AddControllers();
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Services.AddApns<ApnsJwtOptions>(builder.Configuration.GetSection("HttpTimeout").Get<int?>() ?? 100,
+    o => o.UseApnsJwt(builder.Configuration.GetApnsJwtOptions("ApnsJwtOptions:Apnjwt")));
+builder.Services.AddDbContext<DeviceDbContext>(o => o.UseSqlite(builder.Configuration.GetConnectionString("Sqlite")));
+builder.Services.AddScoped<IDeviceServer, DeviceServer>();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
 {
-    public class Program
-    {
-        public static void Main(string[] args)
-        {
-            CreateHostBuilder(args).Build().Run();
-        }
-
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
-    }
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+
+app.UseRouting();
+
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();

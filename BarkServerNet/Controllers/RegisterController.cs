@@ -1,47 +1,37 @@
-﻿using System;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.AspNetCore.Mvc;
 
-namespace BarkServerNet.Controllers
+namespace BarkServerNet.Controllers;
+
+[Route("[controller]")]
+[ApiController]
+public class RegisterController : ControllerBase
 {
-    [Route("[controller]")]
-    [ApiController]
-    public class RegisterController : ControllerBase
+    [HttpGet]
+    public async Task<CommonResponse> Get([FromServices] ILogger<RegisterController> logger, [FromServices] IDeviceServer server, string deviceToken, string? key)
     {
-        [HttpGet]
-        public async Task<CommonResponse> Get([FromServices] ILogger<RegisterController> logger, [FromServices] IDeviceServer server, string deviceToken, string? key)
+        CommonResponse resp = new()
         {
-            Device? device = default;
-            CommonResponse response = new()
-            {
-                Code = StatusCodes.Status200OK,
-                Timestamp = DateTimeOffset.Now.ToUnixTimeSeconds()
-            };
+            Code = StatusCodes.Status200OK,
+            Timestamp = DateTimeOffset.Now.ToUnixTimeSeconds()
+        };
 
-            try
+        try
+        {
+            var deviceKey = string.IsNullOrWhiteSpace(key) ? await server.RegisterDeviceAsync(deviceToken) : server.GetDeviceToken(key);
+
+            if (string.IsNullOrWhiteSpace(deviceKey))
             {
-                device = string.IsNullOrWhiteSpace(key) ? await server.RegisterDevice(deviceToken) : server.GetDevice(key);
+                resp.Message = $"{deviceKey} is empty";
+                return resp;
             }
-            catch (Exception ex)
-            {
-                response.Message = ex.Message;
-                logger.LogError(ex, "Registe fail");
-            }
-            finally
-            {
-                if (device != null && device.DeviceToken == deviceToken)
-                {
-                    response.DeviceInfo = new() { DeviceKey = device.DeviceKey, DeviceToken = device.DeviceToken };
-                    response.Message = "success";
-                }
-                else
-                {
-                    response.Message = "fail";
-                }
-            }
-            return response;
+            resp.Message = "success";
+            resp.DeviceInfo = new() { Key = deviceKey, DeviceKey = deviceKey, DeviceToken = deviceToken };
         }
+        catch (Exception ex)
+        {
+            resp.Message = "registe exception";
+            logger.LogError(ex, "registe exception");
+        }
+        return resp;
     }
 }

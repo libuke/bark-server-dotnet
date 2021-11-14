@@ -1,46 +1,42 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
-
-  <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-	 <Nullable>enable</Nullable>
-  </PropertyGroup>
-	
-  <PropertyGroup Condition=" '$(RunConfiguration)' == 'BarkServerNet' " />
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <WarningLevel>4</WarningLevel>
-    <DocumentationFile></DocumentationFile>
-  </PropertyGroup>
-	
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-  </PropertyGroup>
-	
-  <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.8" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.8" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="5.0.8">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.1.4" />
-  </ItemGroup>
-	
-  <ItemGroup>
-    <Folder Include="Server\" />
-    <Folder Include="Other\" />
-  </ItemGroup>
-	
-  <ItemGroup>
-    <ProjectReference Include="..\DotAPNS.Extensions\DotAPNS.Extensions.csproj" />
-  </ItemGroup>
-	
-  <ItemGroup>
-    <None Update="Other\AuthKey.p8">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Other\Device.db">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-	
-  <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<DebugType>portable</DebugType>
+		<GenerateDocumentationFile>False</GenerateDocumentationFile>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(RunConfiguration)' == 'BarkServerNet' " />
+	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+		<WarningLevel>4</WarningLevel>
+		<DocumentationFile></DocumentationFile>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\DotAPNS.Extensions\DotAPNS.Extensions.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+	  <None Update="Other\AuthKey.p8">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Other\Device.db">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Other\Device.db-shm">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Other\Device.db-wal">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
 </Project>

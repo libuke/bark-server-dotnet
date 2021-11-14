@@ -1,12 +1,11 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
+﻿using DotAPNS.Models;
+using DotAPNS.Responses;
 
-namespace DotAPNS
+namespace DotAPNS;
+
+public interface IApnsClient
 {
-    public interface IApnsClient
-    {
-        /// <exception cref="HttpRequestException">Exception occured during connection to an APNs service.</exception>
-        /// <exception cref="ApnsCertificateExpiredException">APNs certificate used to connect to an APNs service is expired and needs to be renewed.</exception>
-        Task<ApnsResponse> SendAsync(ApplePush push, CancellationToken ct = default);
-    }
+    /// <exception cref="HttpRequestException">Exception occured during connection to an APNs service.</exception>
+    /// <exception cref="ApnsCertificateExpiredException">APNs certificate used to connect to an APNs service is expired and needs to be renewed.</exception>
+    Task<ApnsResponse> SendAsync(Notification notification, Payload payload, CancellationToken ct = default);
 }

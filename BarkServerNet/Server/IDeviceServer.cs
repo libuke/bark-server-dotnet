@@ -1,13 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿namespace BarkServerNet;
 
-namespace BarkServerNet
+public interface IDeviceServer
 {
-    public interface IDeviceServer
-    {
-        Task<int> AddDevice(Device device);
+    string? GetDeviceToken(string deviceKey);
 
-        Device? GetDevice(string deviceKey);
-
-        Task<Device?> RegisterDevice(string deviceToken);
-    }
+    Task<string?> RegisterDeviceAsync(string deviceToken);
 }
+
