@@ -2,6 +2,11 @@
 ## 什么是Bark？
 - [Bark](https://github.com/Finb/Bark) IOS APP 允许您将自定义通知推送至您的iPhone
 - [Bark-Server](https://github.com/Finb/bark-server) Go语言版（原版)
+## APNS推送库
+- dotAPNS(https://github.com/alexalok/dotAPNS) .Net Core 3x
+- 本项目使用的APNS库为 fork dotAPNS 而来  
+  - 去除Newtonsoft.Json 改为 System.Text.Json
+  - 增加IOS15时效性消息特性
 ## 运行环境
 - [.NET 6](https://dotnet.microsoft.com/download)
 - 支持的操作系统
