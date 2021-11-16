@@ -24,7 +24,7 @@ public class DeviceInfo
     public string? Key { get; set; }
 
     [JsonPropertyName("device_key")]
-    public string? DeviceKey{ get; set; }
+    public string? DeviceKey { get; set; }
 
     [JsonPropertyName("device_token")]
     public string? DeviceToken { get; set; }

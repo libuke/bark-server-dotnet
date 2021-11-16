@@ -78,23 +78,11 @@ public class Notification
 
     #region Constructor
 
-    public Notification(ApplePushType pushType)
-    {
-        PushType = pushType;
-    }
-
-    public Notification(string deviceToken, ApplePushType pushType)
+    public Notification(string deviceToken, string topic)
     {
         DeviceToken = deviceToken;
-        PushType = pushType;
-    }
-
-    public Notification(ApplePushType pushType, string topic)
-    {
         Topic = topic;
-        PushType = pushType;
     }
 
     #endregion
-
 }

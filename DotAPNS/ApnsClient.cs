@@ -1,15 +1,10 @@
 using DotAPNS.Exceptions;
 using DotAPNS.Models;
 using DotAPNS.Responses;
-using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.OpenSsl;
 using System.ComponentModel;
-using System.Dynamic;
 using System.Net.Http.Headers;
 using System.Security.Authentication;
-using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Text.Json;
 
 namespace DotAPNS;
@@ -21,18 +16,15 @@ public class ApnsClient : IApnsClient
     internal const string HostDevelopment = "https://api.sandbox.push.apple.com";
     internal const string HostProduction = "https://api.push.apple.com";
 
-    readonly ECDsa? _key;
-    readonly string? _keyId;
-    readonly string? _teamId;
-
-    readonly HttpClient _http;
-    readonly bool _useCert;
+    readonly ApnsJwtOptions? _jwtOptions;
 
     /// <summary>
     /// True if certificate provided can only be used for 'voip' type pushes, false otherwise.
     /// </summary>
     readonly bool _isVoipCert;
-    readonly string _bundleId;
+
+    readonly HttpClient _http;
+    readonly bool _useCert;
 
     bool _useSandbox;
     bool _useBackupPort;
@@ -63,69 +55,26 @@ public class ApnsClient : IApnsClient
 
         string topic = split[1];
         _isVoipCert = topic.EndsWith(".voip");
-        _bundleId = split[1].Replace(".voip", "");
         _useCert = true;
     }
 
-    ApnsClient(HttpClient http, ECDsa key, string keyId, string teamId, string bundleId)
+    ApnsClient(HttpClient http, ApnsJwtOptions jwtOptions)
     {
-        _http = http ?? throw new ArgumentNullException(nameof(http));
-        _key = key ?? throw new ArgumentNullException(nameof(key));
-
-        _keyId = keyId ?? throw new ArgumentNullException(nameof(keyId),
-            $"Make sure {nameof(ApnsJwtOptions)}.{nameof(ApnsJwtOptions.KeyId)} is set to a non-null value.");
-
-        _teamId = teamId ?? throw new ArgumentNullException(nameof(teamId),
-            $"Make sure {nameof(ApnsJwtOptions)}.{nameof(ApnsJwtOptions.TeamId)} is set to a non-null value.");
-
-        _bundleId = bundleId ?? throw new ArgumentNullException(nameof(bundleId),
-            $"Make sure {nameof(ApnsJwtOptions)}.{nameof(ApnsJwtOptions.BundleId)} is set to a non-null value.");
+        _http = http;
+        _jwtOptions = jwtOptions;
     }
 
-    public static ApnsClient CreateUsingJwt(HttpClient http, ApnsJwtOptions options)
+    public static ApnsClient CreateUsingJwt(HttpClient http, ApnsJwtOptions jwtOptions)
     {
-        if (http == null) throw new ArgumentNullException(nameof(http));
-        if (options == null) throw new ArgumentNullException(nameof(options));
+        http = http ?? throw new ArgumentNullException(nameof(http));
+        jwtOptions = jwtOptions ?? throw new ArgumentNullException(nameof(jwtOptions));
 
-        string certContent;
-        if (options.CertFilePath != null)
-        {
-            certContent = File.ReadAllText(options.CertFilePath);
-        }
-        else if (options.CertContent != null)
-        {
-            certContent = options.CertContent;
-        }
-        else
-        {
-            throw new ArgumentException("Either certificate file path or certificate contents must be provided.", nameof(options));
-        }
-
-        certContent = certContent.Replace("\r", "").Replace("\n", "")
-            .Replace("-----BEGIN PRIVATE KEY-----", "").Replace("-----END PRIVATE KEY-----", "");
-
-        certContent = $"-----BEGIN PRIVATE KEY-----\n{certContent}\n-----END PRIVATE KEY-----";
-        var ecPrivateKeyParameters = (ECPrivateKeyParameters)new PemReader(new StringReader(certContent)).ReadObject();
-        // See https://github.com/dotnet/core/issues/2037#issuecomment-436340605 as to why we calculate q ourselves
-        // TL;DR: we don't have Q coords in ecPrivateKeyParameters, only G ones. They won't work.
-        var q = ecPrivateKeyParameters.Parameters.G.Multiply(ecPrivateKeyParameters.D).Normalize();
-        var d = ecPrivateKeyParameters.D.ToByteArrayUnsigned();
-        var msEcp = new ECParameters
-        {
-            Curve = ECCurve.NamedCurves.nistP256,
-            Q = { X = q.AffineXCoord.GetEncoded(), Y = q.AffineYCoord.GetEncoded() },
-            D = d
-        };
-        var key = ECDsa.Create(msEcp);
-        return new ApnsClient(http, key, options.KeyId, options.TeamId, options.BundleId);
+        return new ApnsClient(http, jwtOptions);
     }
 
     public static ApnsClient CreateUsingCert(X509Certificate2 cert)
     {
-        if (cert == null)
-        {
-            throw new ArgumentNullException(nameof(cert));
-        }
+        cert = cert ?? throw new ArgumentNullException(nameof(cert));
 
         var handler = new HttpClientHandler
         {
@@ -139,14 +88,8 @@ public class ApnsClient : IApnsClient
 
     public static ApnsClient CreateUsingCustomHttpClient(HttpClient httpClient, X509Certificate2 cert)
     {
-        if (httpClient == null)
-        {
-            throw new ArgumentNullException(nameof(httpClient));
-        }
-        if (cert == null)
-        {
-            throw new ArgumentNullException(nameof(cert));
-        }
+        httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        cert = cert ?? throw new ArgumentNullException(nameof(cert));
 
         var apns = new ApnsClient(httpClient, cert);
         return apns;
@@ -168,10 +111,7 @@ public class ApnsClient : IApnsClient
     #region Method
     public async Task<ApnsResponse> SendAsync(Notification notification, Payload payload, CancellationToken ct = default)
     {
-        if (notification == null)
-        {
-            throw new ArgumentNullException(nameof(notification));
-        }
+        notification = notification ?? throw new ArgumentNullException(nameof(notification));
 
         if (_useCert)
         {
@@ -186,49 +126,40 @@ public class ApnsClient : IApnsClient
         {
             Version = new Version(2, 0)
         };
-        req.Headers.Add("apns-priority", notification.Priority.ToString());
-        req.Headers.Add("apns-push-type", notification.PushType.ToString().ToLowerInvariant());
-        req.Headers.Add("apns-topic", GetTopic(notification.PushType));
 
-        if (!_useCert)
+        if (!string.IsNullOrWhiteSpace(notification.Topic))
         {
-            req.Headers.Authorization = new AuthenticationHeaderValue("bearer", GetOrGenerateJwt());
+            req.Headers.Add("apns-topic", notification.Topic);
         }
 
-        if (notification.Expiration.HasValue)
+        if (!string.IsNullOrWhiteSpace(notification.ApnsID))
         {
-            var exp = notification.Expiration.Value;
-            if (exp == DateTimeOffset.MinValue)
-            {
-                req.Headers.Add("apns-expiration", "0");
-            }
-            else
-            {
-                req.Headers.Add("apns-expiration", exp.ToUnixTimeSeconds().ToString());
-            }
+            req.Headers.Add("apns-id", notification.ApnsID);
         }
-        if (!string.IsNullOrEmpty(notification.CollapseID))
+
+        if (!string.IsNullOrWhiteSpace(notification.CollapseID))
         {
             req.Headers.Add("apns-collapse-id", notification.CollapseID);
         }
 
-        var payloadDic = new Dictionary<string, object>
+        if (notification.Priority > 0)
         {
-            ["aps"] = payload
-        };
-
-        if (payload?.Content != null)
-        {
-            foreach (var custom in payload.Content)
-            {
-                if (custom.Value != null)
-                {
-                    payloadDic[custom.Key] = custom.Value;
-                }
-            }
+            req.Headers.Add("apns-priority", notification.Priority.ToString());
         }
 
-        req.Content = new JsonContent(payloadDic);
+        if (notification.Expiration.HasValue && notification.Expiration != DateTimeOffset.MinValue)
+        {
+            req.Headers.Add("apns-expiration", notification.Expiration.Value.ToUnixTimeSeconds().ToString());
+        }
+
+        req.Headers.Add("apns-push-type", notification.PushType.ToString().ToLowerInvariant());
+
+        if (!_useCert)
+        {
+            req.Headers.Authorization = new AuthenticationHeaderValue("bearer", _jwtOptions!.GenerateIfExpired());
+        }
+
+        req.Content = payload?.MarshalJsonContent();
 
         HttpResponseMessage resp;
         try
@@ -290,28 +221,6 @@ public class ApnsClient : IApnsClient
     {
         _useBackupPort = true;
         return this;
-    }
-
-    string GetTopic(ApplePushType pushType)
-    {
-        return pushType switch
-        {
-            ApplePushType.Background or ApplePushType.Alert => _bundleId,
-            ApplePushType.Voip => _bundleId + ".voip",
-            _ => throw new ArgumentOutOfRangeException(nameof(pushType), pushType, null),
-        };
-    }
-
-    string GetOrGenerateJwt()
-    {
-        string header = JsonSerializer.Serialize((new { alg = "ES256", kid = _keyId }));
-        string payload = JsonSerializer.Serialize(new { iss = _teamId, iat = DateTimeOffset.UtcNow.ToUnixTimeSeconds() });
-        string headerBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(header));
-        string payloadBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(payload));
-        string unsignedJwtData = $"{headerBase64}.{payloadBase64}";
-        byte[] signature = _key!.SignData(Encoding.UTF8.GetBytes(unsignedJwtData), HashAlgorithmName.SHA256);
-
-        return $"{unsignedJwtData}.{Convert.ToBase64String(signature)}";
     }
 
     #endregion

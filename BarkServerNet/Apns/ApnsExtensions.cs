@@ -8,14 +8,14 @@ namespace BarkServerNet.Apns;
 
 public static class ApnsExtensions
 {
-    public static async Task<ApnsResponse> PushAlertAsync(this IApnsClient apnsClient, string deviceToken, Message message)
+    public static async Task<ApnsResponse> PushAlertAsync(this IApnsClient apnsClient, string deviceToken, string topic, Message message)
     {
         if (string.IsNullOrWhiteSpace(deviceToken))
         {
             throw new ArgumentNullException(nameof(deviceToken), $"Make sure {nameof(deviceToken)} is set to a non-null value.");
         }
 
-        var notification = new Notification(deviceToken, ApplePushType.Alert)
+        var notification = new Notification(deviceToken, topic)
         {
             Expiration = DateTimeOffset.UtcNow.AddDays(1)
         };

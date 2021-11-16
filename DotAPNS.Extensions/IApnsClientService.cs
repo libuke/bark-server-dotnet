@@ -2,7 +2,7 @@
 
 namespace DotAPNS.Extensions;
 
-public interface IApnsService
+public interface IApnsClientService
 {
     IApnsClient CreateUsingCert(X509Certificate2 cert, bool useSandbox = false);
 

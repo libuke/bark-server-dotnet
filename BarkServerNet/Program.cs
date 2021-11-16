@@ -1,5 +1,4 @@
 ﻿using BarkServerNet;
-using DotAPNS;
 using DotAPNS.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
@@ -12,8 +11,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddApns<ApnsJwtOptions>(builder.Configuration.GetSection("HttpTimeout").Get<int?>() ?? 100,
-    o => o.UseApnsJwt(builder.Configuration.GetApnsJwtOptions("ApnsJwtOptions:Apnjwt")));
+var httpTimeout = builder.Configuration.GetSection("HttpTimeout").Get<int?>() ?? 100;
+
+builder.Services.AddApns<ApnsStrings>(httpTimeout, o => o.UseApnsJwt(builder.Configuration.GetApnsJwtOptions("ApnsStrings")));
 builder.Services.AddDbContext<DeviceDbContext>(o => o.UseSqlite(builder.Configuration.GetConnectionString("Sqlite")));
 builder.Services.AddScoped<IDeviceServer, DeviceServer>();
 

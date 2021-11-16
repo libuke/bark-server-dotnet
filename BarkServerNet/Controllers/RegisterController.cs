@@ -2,8 +2,8 @@
 
 namespace BarkServerNet.Controllers;
 
-[Route("[controller]")]
 [ApiController]
+[Route("[controller]")]
 public class RegisterController : ControllerBase
 {
     [HttpGet]
@@ -15,21 +15,25 @@ public class RegisterController : ControllerBase
             Timestamp = DateTimeOffset.Now.ToUnixTimeSeconds()
         };
 
+        if (string.IsNullOrWhiteSpace(deviceToken))
+        {
+            resp.Message = $"{nameof(deviceToken)} is empty";
+            resp.Code = StatusCodes.Status400BadRequest;
+            return resp;
+        }
+
         try
         {
-            var deviceKey = string.IsNullOrWhiteSpace(key) ? await server.RegisterDeviceAsync(deviceToken) : server.GetDeviceToken(key);
+            var deviceKey = await server.RegisterDeviceAsync(key, deviceToken);
 
-            if (string.IsNullOrWhiteSpace(deviceKey))
-            {
-                resp.Message = $"{deviceKey} is empty";
-                return resp;
-            }
             resp.Message = "success";
             resp.DeviceInfo = new() { Key = deviceKey, DeviceKey = deviceKey, DeviceToken = deviceToken };
         }
         catch (Exception ex)
         {
             resp.Message = "registe exception";
+            resp.Code = StatusCodes.Status500InternalServerError;
+
             logger.LogError(ex, "registe exception");
         }
         return resp;

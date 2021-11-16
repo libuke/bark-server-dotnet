@@ -7,8 +7,8 @@ namespace DotAPNS.Extensions
     {
         public static IServiceCollection AddApns<T>(this IServiceCollection services, int httpTimeout, Action<ApnsOptionsBuilder<T>> optionsAction) where T : class
         {
-            services.AddHttpClient("dotAPNS_Jwt", x => 
-            { 
+            services.AddHttpClient("dotAPNS_Jwt", x =>
+            {
                 x.Timeout = TimeSpan.FromSeconds(httpTimeout);
             });
             services.AddHttpClient("dotAPNS_Cert")
@@ -18,7 +18,7 @@ namespace DotAPNS.Extensions
                     ServerCertificateCustomValidationCallback = (m, x, c, s) => true
                 });
             optionsAction?.Invoke(new ApnsOptionsBuilder<T>(services));
-            services.AddSingleton<IApnsService, ApnsService>();
+            services.AddSingleton<IApnsClientService, ApnsClientService>();
             return services;
         }
     }

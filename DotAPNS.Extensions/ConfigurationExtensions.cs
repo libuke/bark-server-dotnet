@@ -19,7 +19,7 @@ public static class ConfigurationExtensions
         }
         else
         {
-            throw new ArgumentNullException("Value cannot be null. (Parameter 'ApnsJwtOptions')");
+            throw new ArgumentNullException($"Section alue cannot be null. (Parameter '{nameof(name)}: {name}')");
         }
     }
 }

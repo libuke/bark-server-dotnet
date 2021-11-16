@@ -2,8 +2,8 @@
 
 namespace BarkServerNet.Controllers;
 
-[Route("[controller]")]
 [ApiController]
+[Route("[controller]")]
 public class PingController : ControllerBase
 {
     [HttpGet]

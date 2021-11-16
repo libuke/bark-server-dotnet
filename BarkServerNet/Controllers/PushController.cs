@@ -1,6 +1,7 @@
-﻿using DotAPNS.Extensions;
-using BarkServerNet.Apns;
+﻿using BarkServerNet.Apns;
+using DotAPNS.Extensions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace BarkServerNet.Controllers;
 
@@ -10,13 +11,15 @@ public class PushController : ControllerBase
 {
     readonly ILogger<PushController> _logger;
     readonly IDeviceServer _server;
-    readonly IApnsService _apnsService;
+    readonly IApnsClientService _apnsService;
+    readonly ApnsStrings _apnsStrings;
 
-    public PushController(ILogger<PushController> logger, [FromServices] IDeviceServer server, [FromServices] IApnsService apnsService)
+    public PushController(ILogger<PushController> logger, IDeviceServer server, IApnsClientService apnsService, IOptions<ApnsStrings> apnsStrings)
     {
         _logger = logger;
         _server = server;
         _apnsService = apnsService;
+        _apnsStrings = apnsStrings.Value;
     }
 
     [HttpGet("/{deviceKey}/{title}/{body?}")]
@@ -40,7 +43,7 @@ public class PushController : ControllerBase
         return await PushAppleAsync(deviceKey, message);
     }
 
-    #region Helper Nethod 
+    #region Helper Method 
     async Task<CommonResponse> PushAppleAsync(string deviceKey, Message message)
     {
         CommonResponse resp = new()
@@ -55,16 +58,19 @@ public class PushController : ControllerBase
 
             if (deviceToken == null)
             {
-                resp.Message = $"{nameof(deviceToken)}does not exist";
+                resp.Message = $"{nameof(deviceToken)} does not exist";
+                resp.Code = StatusCodes.Status400BadRequest;
                 return resp;
             }
             var clien = _apnsService.CreateUsingJwt();
-            var result = await clien.PushAlertAsync(deviceToken, message);
-            resp.Message = result.ReasonString;
+            var result = await clien.PushAlertAsync(deviceToken, _apnsStrings.Topic, message);
+            resp.Message = result.IsSuccessful ? "success" : result.ReasonString;
         }
         catch (Exception ex)
         {
             resp.Message = "push exception";
+            resp.Code = StatusCodes.Status500InternalServerError;
+
             _logger.LogError(ex, "push exception");
         }
         return resp;

@@ -12,7 +12,7 @@ public class Message
     public string? Sound
     {
         get => $"{_sound}.caf";
-        set { _sound =  value ?? "default" ; }
+        set { _sound = value ?? "default"; }
     }
 
     public string? Category { get; set; } = "myNotificationCategory";

@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using DotAPNS.Responses;
+using System.Text.Json.Serialization;
 
 namespace DotAPNS.Models;
 
@@ -240,6 +241,32 @@ public class Payload
     {
         Content["mdm"] = mdm!;
         return this;
+    }
+
+    #endregion
+
+    #region Method
+
+    // MarshalJSON converts the notification payload to JSON.
+    public PayloadJsonContent MarshalJsonContent()
+    {
+        var payloadDic = new Dictionary<string, object>
+        {
+            ["aps"] = this
+        };
+
+        if (Content != null)
+        {
+            foreach (var custom in Content)
+            {
+                if (custom.Value != null)
+                {
+                    payloadDic[custom.Key] = custom.Value;
+                }
+            }
+        }
+
+        return new PayloadJsonContent(payloadDic);
     }
 
     #endregion

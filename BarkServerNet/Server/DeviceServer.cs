@@ -11,16 +11,28 @@ public class DeviceServer : IDeviceServer
 
     public string? GetDeviceToken(string deviceKey)
     {
-        return _context.Devices!.FirstOrDefault(x => x.DeviceKey == deviceKey)?.DeviceToken;
+        return _context.Devices.FirstOrDefault(x => x.DeviceKey == deviceKey)?.DeviceToken;
     }
 
-    public async Task<string?> RegisterDeviceAsync(string deviceToken)
+    public async Task<string> RegisterDeviceAsync(string? key, string deviceToken)
     {
-        string deviceKey = Guid.NewGuid().ToString("N");
+        // If the deviceKey is empty or the corresponding deviceToken cannot be obtained from the database,
+        // it is considered as a new device registration
+        if (string.IsNullOrWhiteSpace(key) || GetDeviceToken(key) == null)
+        {
+            // Generate a new UUID as the deviceKey when a new device register
+            key = Guid.NewGuid().ToString("N");
 
-        var device = new Device { DeviceKey = deviceKey, DeviceToken = deviceToken };
-        _context.Add(device);
+            var device = new Device { DeviceKey = key, DeviceToken = deviceToken };
+            _context.Add(device);
+        }
+        else
+        {
+            var device = _context.Devices.FirstOrDefault(x => x.DeviceKey == key);
+            device!.DeviceToken = deviceToken;
+        }
+        await _context.SaveChangesAsync();
 
-        return await _context.SaveChangesAsync() > 0 ? deviceKey : null;
+        return key;
     }
 }
