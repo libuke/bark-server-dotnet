@@ -8,11 +8,17 @@ public class Message
 
     public string? Body { get; set; }
 
-    string? _sound;
+    string? _sound = "default";
     public string? Sound
     {
-        get => $"{_sound}.caf";
-        set { _sound = value ?? "default"; }
+        get => _sound;
+        set
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                _sound = value + ".caf";
+            }
+        }
     }
 
     public string? Category { get; set; } = "myNotificationCategory";

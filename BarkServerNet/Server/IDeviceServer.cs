@@ -2,7 +2,7 @@
 
 public interface IDeviceServer
 {
-    string? GetDeviceToken(string deviceKey);
+    Task<string?> GetDeviceTokenAsync(string deviceKey);
 
     Task<string> RegisterDeviceAsync(string? key, string deviceToken);
 }

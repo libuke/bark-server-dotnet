@@ -54,7 +54,7 @@ public class PushController : ControllerBase
 
         try
         {
-            var deviceToken = _server.GetDeviceToken(deviceKey);
+            var deviceToken = await _server.GetDeviceTokenAsync(deviceKey);
 
             if (deviceToken == null)
             {
