@@ -23,7 +23,7 @@ public class PushController : ControllerBase
     }
 
     [HttpGet("/{deviceKey}/{title}/{body?}")]
-    public async Task<CommonResponse> Get(string deviceKey, string? title, string? body, [FromQuery] Message message)
+    public async Task<CommonResponse> Get(string deviceKey, string title, string? body, [FromQuery] Message message)
     {
         message.Title = title;
         message.Body = body;
