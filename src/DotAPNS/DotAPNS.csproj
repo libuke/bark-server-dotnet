@@ -18,7 +18,4 @@
 		<LangVersion>latest</LangVersion>
 		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
 	</PropertyGroup>
-	<ItemGroup>
-		<PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
-	</ItemGroup>
 </Project>

@@ -1,6 +1,4 @@
-﻿using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.OpenSsl;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -41,25 +39,11 @@ public class ApnsJwtOptions
     public static ECDsa AuthKeyFromFile(string filePath)
     {
         var certContent = File.ReadAllText(filePath);
-        return AuthKeyFromContent(certContent);
-    }
+        certContent = certContent.Replace("\r", "").Replace("\n", "").Replace("-----BEGIN PRIVATE KEY-----", "").Replace("-----END PRIVATE KEY-----", "");
 
-    // AuthKeyFromContent loads a .p8 certificate from an in Content
-    public static ECDsa AuthKeyFromContent(string certContent)
-    {
-        var ecPrivateKeyParameters = (ECPrivateKeyParameters)new PemReader(new StringReader(certContent)).ReadObject();
-        // See https://github.com/dotnet/core/issues/2037#issuecomment-436340605 as to why we calculate q ourselves
-        // TL;DR: we don't have Q coords in ecPrivateKeyParameters, only G ones. They won't work.
-        var q = ecPrivateKeyParameters.Parameters.G.Multiply(ecPrivateKeyParameters.D).Normalize();
-        var d = ecPrivateKeyParameters.D.ToByteArrayUnsigned();
-        var msEcp = new ECParameters
-        {
-            Curve = ECCurve.NamedCurves.nistP256,
-            Q = { X = q.AffineXCoord.GetEncoded(), Y = q.AffineYCoord.GetEncoded() },
-            D = d
-        };
-
-        return ECDsa.Create(msEcp);
+        var result = ECDsa.Create();
+        result.ImportPkcs8PrivateKey(Convert.FromBase64String(certContent), out _);
+        return result;
     }
 
     // GenerateIfExpired checks to see if the token is about to expire and
